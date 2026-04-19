@@ -78,7 +78,7 @@ This project is designed to run in **Google Colab** with a GPU runtime.
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-username/flower-classification.git
+git clone https://github.com/aeshaharshad/flower-classification-deep-learning.git
 
 # 2. Upload archive.zip (flowers dataset) to /content/ in Colab
 
