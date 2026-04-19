@@ -10,6 +10,7 @@
 ![Dataset](https://img.shields.io/badge/Dataset-5%20Classes%20%C2%B7%204317%20Images-lightgrey)
 
 ---
+<img width="1409" height="667" alt="image" src="https://github.com/user-attachments/assets/279b30a0-62c7-4427-98f6-d93cfd1e5fca" />
 
 ## Overview
 
