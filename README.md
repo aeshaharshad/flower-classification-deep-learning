@@ -1,6 +1,6 @@
 # Flower Species Classification — A Comparative Deep Learning Study
 
-> Systematic evaluation of seven neural network architectures on the Oxford 5-class flower dataset, with experiment tracking via Weights & Biases.
+> Systematic evaluation of seven neural network architectures on the 5-class flower dataset, with experiment tracking via Weights & Biases.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)
