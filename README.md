@@ -1,44 +1,58 @@
 # Flower Species Classification — A Comparative Deep Learning Study
 
-> Systematic evaluation of seven neural network architectures on the 5-class flower dataset, with experiment tracking via Weights & Biases.
+> Can a linear model compete with ResNet? This project finds out — systematically.
 
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-orange)
 ![Keras](https://img.shields.io/badge/Keras-green)
 ![W&B](https://img.shields.io/badge/Weights%20%26%20Biases-tracked-yellow)
 ![Colab](https://img.shields.io/badge/Google%20Colab-GPU-red)
-![Dataset](https://img.shields.io/badge/Dataset-5%20Classes%20%C2%B7%204317%20Images-lightgrey)
-
----
-<img width="1409" height="667" alt="image" src="https://github.com/user-attachments/assets/279b30a0-62c7-4427-98f6-d93cfd1e5fca" />
-
-## Overview
-
-This project presents a structured research comparison of seven deep learning architectures applied to the task of flower species classification. Beginning from a simple linear baseline and progressing to state-of-the-art pretrained networks, each model is evaluated under identical conditions — same dataset, same preprocessing pipeline, and the same evaluation metrics (accuracy curves, confusion matrices, and per-class classification reports).
-
-The primary objective is not just to achieve high accuracy, but to rigorously document *how* and *why* performance evolves as architectural complexity increases — from linear decision boundaries to deep residual networks with transfer learning.
-
-Hyperparameter optimisation is performed using Bayesian search via Weights & Biases Sweeps, and all experiment runs are tracked and logged for full reproducibility.
+![Accuracy](https://img.shields.io/badge/Best%20Accuracy-94.54%25-brightgreen)
 
 ---
 
-## Models Compared
+## What This Project Is
 
-| # | Model | Architecture Type | Key Feature | Input Size |
-|---|-------|------------------|-------------|------------|
-| 1 | Linear NN | Fully connected | Baseline — no hidden layers, linear boundary only | 64×64 |
-| 2 | Hidden Layer NN | Fully connected | Two Dense layers, BatchNorm, Dropout — logged to W&B | 64×64 |
-| 3 | Improved NN | Fully connected | Bayesian sweep (W&B), CosineDecay LR, EarlyStopping | 64×64 |
-| 4 | EfficientNetB0 | Transfer learning | ImageNet pretrained, two-phase fine-tuning | 224×224 |
-| 5 | AlexNet | Custom CNN | 5 conv layers, historical ImageNet 2012 winner | 224×224 |
-| 6 | VGG16 | Transfer learning | 13 conv layers with 3×3 filters, block5 fine-tuning | 224×224 |
-| 7 | ResNet50 | Transfer learning | Residual connections, conv5 block fine-tuning | 224×224 |
+Most deep learning tutorials pick one model, train it, and call it done. This project does something different — it asks a research question:
+
+**"How does classification performance evolve as architectural complexity increases, from a simple linear model to state-of-the-art pretrained networks?"**
+
+To answer that, seven architectures were implemented, trained, and evaluated under identical conditions on the same 5-class flower dataset. Every decision — from image resolution to optimiser choice — is deliberate and documented.
+
+---
+
+## Results at a Glance
+
+| # | Model | Type | Val Accuracy |
+|---|-------|------|-------------|
+| 1 | Linear NN | Baseline | 46.45% |
+| 2 | Hidden Layer NN | Fully connected | 48.27% |
+| 3 | Improved NN | Tuned FC + Bayesian sweep | — |
+| 4 | **EfficientNetB0** | Transfer learning | **94.54% 🏆** |
+| 5 | AlexNet | Custom CNN | 74.86% |
+| 6 | VGG16 | Transfer learning | 91.99% |
+| 7 | ResNet50 | Transfer learning | 93.62% |
+
+The jump from **46% → 94%** is not random — it tells a clear story about what these architectures can and cannot do, and why.
+
+---
+
+## The Story Behind the Numbers
+
+**Models 1 & 2 (46–48%)** confirm the theoretical expectation: dense networks flatten spatial structure. A 64×64 image becomes a vector of 12,288 numbers — all pixel relationships are lost. No amount of hidden layers rescues that.
+
+**AlexNet (74.86%)** shows that convolutions change everything. Spatial hierarchies — edges → textures → shapes — are preserved and learned. But training from scratch on 4,317 images limits how far it can go.
+
+**VGG16, ResNet50, EfficientNetB0 (91–94%)** demonstrate the power of transfer learning. These models arrive pre-loaded with knowledge extracted from 1.2 million ImageNet images. Fine-tuning redirects that knowledge toward flowers in a fraction of the training time.
+
+**EfficientNetB0 wins** because it scales depth, width, and resolution together — not independently. It achieves the highest accuracy with the fewest parameters, which is exactly why it is the standard choice in modern research.
 
 ---
 
 ## Dataset
-https://www.kaggle.com/datasets/imsparsh/flowers-dataset
-The **TF Flowers dataset** contains 4,317 labelled images across five species. All images are resized to a consistent resolution per model type. An 80/20 train-validation split is applied with a fixed seed (42) for reproducibility.
+
+**Source:** [Kaggle — Flowers Dataset](https://www.kaggle.com/datasets/imsparsh/flowers-dataset)
+**Size:** 4,317 images · 5 classes · 80/20 train-validation split (seed = 42)
 
 | Class | Label |
 |-------|-------|
@@ -48,103 +62,57 @@ The **TF Flowers dataset** contains 4,317 labelled images across five species. A
 | Sunflowers | 3 |
 | Tulips | 4 |
 
-Two parallel data pipelines are maintained:
-- **64×64 normalised pipeline** — for Dense/flat models, to avoid GPU out-of-memory on the flatten operation (224×224 flatten = 150,528 neurons → GPU OOM; 64×64 flatten = 12,288 neurons → safe)
-- **224×224 raw pipeline** — for CNN and transfer learning models, which apply their own built-in preprocessing (`preprocess_input`)
+---
+
+## Architecture Overview
+
+<img width="1409" height="667" alt="Model comparison results" src="https://github.com/user-attachments/assets/279b30a0-62c7-4427-98f6-d93cfd1e5fca" />
+
+---
+
+## Key Technical Decisions — and Why
+
+Every design choice in this project has a reason. Here are the most important ones:
+
+**Why 64×64 for dense models, 224×224 for CNNs?**
+Flattening a 224×224 image produces 150,528 input neurons. A single Dense(512) layer on that input creates 77 million parameters — enough to exhaust Colab's GPU RAM instantly. Reducing to 64×64 brings this to 6.3 million — manageable, and sufficient for dense layers which cannot exploit spatial structure anyway. CNN models are unaffected because convolutions do not explode with image size.
+
+**Why Bayesian optimisation over grid search?**
+Grid search evaluates every combination exhaustively. With 6 hyperparameters, that means hundreds of runs. Bayesian search builds a probabilistic model of the search space and proposes the next configuration based on what has worked before — finding better results in 10 trials than grid search finds in 100.
+
+**Why two-phase fine-tuning for transfer learning?**
+Unfreezing a pretrained network immediately and training at full learning rate destroys the ImageNet weights — a phenomenon called catastrophic forgetting. Phase 1 trains only the new classification head while the base is frozen. Phase 2 selectively unfreezes the top layers and trains at 10× lower learning rate, gently adapting pretrained features to the flower domain.
+
+**Why EfficientNetB0 specifically?**
+VGG16 scales by making networks deeper. ResNets scale by adding residual blocks. EfficientNetB0 uses compound scaling — depth, width, and resolution are increased together using a fixed ratio derived from a neural architecture search. This produces better accuracy per parameter than any of its contemporaries.
 
 ---
 
 ## Experiment Tracking — Weights & Biases
 
-All experiment runs are tracked using W&B under the project `flower-classification`.
+Professional ML research requires reproducibility. Every run in this project is tracked via [Weights & Biases](https://wandb.ai).
 
-- **Model 2 (Hidden Layer NN)** — logged as a single named run to demonstrate manual experiment tracking
-- **Model 3 (Improved NN)** — full Bayesian sweep across 6 hyperparameters, 10 trials. Best configuration is used to retrain a final model with CosineDecay learning rate scheduling and EarlyStopping
+- **Model 2** is logged as a single named run — demonstrating manual experiment tracking
+- **Model 3** runs a full Bayesian sweep: 10 trials, 6 hyperparameters, optimising `val_accuracy`. The best configuration is then retrained with **CosineDecay** learning rate scheduling and **EarlyStopping**
 
 | Setting | Value |
 |---------|-------|
-| W&B project | `flower-classification` |
+| Project | `flower-classification` |
 | Sweep method | Bayesian optimisation |
 | Trials | 10 |
-| Optimise metric | `val_accuracy` (maximize) |
-| LR scheduler on best config | CosineDecay |
-
----
-
-
-## Setup & Usage
-
-This project is designed to run in **Google Colab** with a GPU runtime.
-
-```bash
-# 1. Clone repository
-git clone https://github.com/aeshaharshad/flower-classification-deep-learning.git
-
-# 2. Upload archive.zip (flowers dataset) to /content/ in Colab
-
-# 3. Add WANDB_API_KEY to Colab Secrets
-#    (click the key icon on the left panel in Colab)
-
-# 4. Open flower_research_complete.py and run all sections sequentially
-```
+| Metric | `val_accuracy` → maximize |
+| LR schedule (best config) | CosineDecay |
 
 ---
 
 ## Evaluation Methodology
 
-Every model is evaluated using the same three tools applied consistently to the held-out validation set:
+All models are evaluated identically — no cherry-picking:
 
 1. **Training curves** — loss and accuracy per epoch, training vs. validation
-2. **Confusion matrix** — per-class prediction breakdown visualised as a seaborn heatmap
-3. **Classification report** — precision, recall, F1-score per class, plus macro and weighted averages
-4. **Final comparison** — a unified bar chart and table ranking all 7 models by validation accuracy
+2. **Confusion matrix** — seaborn heatmap showing per-class prediction breakdown
+3. **Classification report** — precision, recall, F1-score per class + macro/weighted averages
+4. **Final comparison** — unified bar chart ranking all 7 models
 
 ---
 
-## Key Technical Decisions
-
-| Decision | Rationale |
-|----------|-----------|
-| 64×64 for Dense models | 224×224 flatten → 150,528 neurons causes GPU OOM. 64×64 → 12,288 neurons is sufficient for Dense layers. |
-| Bayesian over grid search | Bayesian optimisation finds better configurations in fewer trials by modelling the search space probabilistically. |
-| Two-phase fine-tuning | Freeze base → train head first, then unfreeze top layers at 10× lower LR. Prevents catastrophic forgetting of ImageNet weights. |
-| EfficientNetB0 for TL baseline | Best accuracy-per-parameter ratio among CNNs. Compound scaling balances width, depth, and resolution simultaneously. |
-| `keras.backend.clear_session()` | Called between W&B sweep runs to release GPU memory and prevent OOM accumulation across trials. |
-| `gc.collect()` + `del model` | Explicit Python garbage collection after each sweep run ensures clean memory state. |
-
----
-
-## Requirements
-
-```
-tensorflow>=2.15
-wandb>=0.25
-scikit-learn>=1.3
-seaborn>=0.13
-matplotlib>=3.8
-numpy>=1.24
-```
-
-Install with:
-```bash
-pip install tensorflow wandb scikit-learn seaborn matplotlib numpy
-```
-
----
-
-## Results
-
-Final validation accuracies are logged to the console and plotted as a comparative bar chart at the end of the notebook. Individual confusion matrices and classification reports are generated for each model.
-
-> Expected ordering by performance: Linear NN < Hidden NN < Improved NN < AlexNet < VGG16 ≈ ResNet50 < EfficientNetB0
-
----
-
-
-## References
-
-- Krizhevsky, A., Sutskever, I., & Hinton, G. E. (2012). ImageNet Classification with Deep Convolutional Neural Networks. *NeurIPS*.
-- Simonyan, K., & Zisserman, A. (2014). Very Deep Convolutional Networks for Large-Scale Image Recognition. *ICLR 2015*.
-- He, K., Zhang, X., Ren, S., & Sun, J. (2015). Deep Residual Learning for Image Recognition. *CVPR 2016*.
-- Tan, M., & Le, Q. (2019). EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks. *ICML 2019*.
-- TensorFlow Flowers Dataset — [tensorflow.org/datasets/catalog/tf_flowers](https://www.tensorflow.org/datasets/catalog/tf_flowers)
